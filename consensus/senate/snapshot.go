@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SecretBlockChain/go-secret/log"
 	"math/big"
+	"math/rand"
 	"sort"
 
 	"github.com/SecretBlockChain/go-secret/common"
@@ -522,6 +524,54 @@ func (snap *Snapshot) TopCandidates(state *state.StateDB, n int) (SortableAddres
 	return candidates, nil
 }
 
+func (snap *Snapshot) RandCandidates(seed int64, n int) (SortableAddresses, error) {
+	if n <= 0 {
+		return nil, nil
+	}
+
+	candidateTrie, err := snap.ensureTrie(candidatePrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	iterCandidate := trie.NewIterator(candidateTrie.NodeIterator(nil))
+	existCandidate := iterCandidate.Next()
+	if !existCandidate {
+		return nil, nil
+	}
+
+	// All candidate
+	candidates := make(SortableAddresses, 0)
+	for existCandidate {
+		candidate := iterCandidate.Value
+		candidateAddr := common.BytesToAddress(candidate)
+		candidates = append(candidates, SortableAddress{candidateAddr, big.NewInt(0)})
+		existCandidate = iterCandidate.Next()
+	}
+
+	// Shuffle candidates
+	r := rand.New(rand.NewSource(seed))
+	for i := len(candidates) -1 ; i >0; i-- {
+		j := int(r.Int31n(int32(i + 1)))
+		candidates[i], candidates[j] = candidates[j], candidates[i]
+	}
+	if len(candidates) > n {
+		candidates = candidates[:n]
+	}
+
+	//TODO test print log
+	printLog(candidates,n)
+	return candidates, nil
+}
+
+func printLog(candidates SortableAddresses , count int)  {
+
+	addrS := fmt.Sprintf("\n count %d | \n",count)
+	for _,addr := range candidates {
+		addrS += addr.Address.String() + "\n"
+	}
+	log.Info("rand candidates ",addrS)
+}
 // BecomeCandidate add a new candidate.
 func (snap *Snapshot) BecomeCandidate(candidateAddr common.Address) error {
 	candidateTrie, err := snap.ensureTrie(candidatePrefix)

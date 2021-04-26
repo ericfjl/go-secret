@@ -255,7 +255,7 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 			if candidateCount <= safeSize {
 				log.Info("[DPOS] No more candidate can be kick out",
 					"prevEpochID", headerExtra.Epoch-1,
-					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i)
+					"candidateCount", candidateCount, "needKickOutCount", len(needKickOutValidators)-i,"Epoch", config.Epoch,"Period", config.Period)
 				return nil
 			}
 
@@ -272,13 +272,15 @@ func (senate *Senate) tryElect(config params.SenateConfig, state *state.StateDB,
 	}
 
 	// Elect next epoch validators by votes
-	candidates, err := snap.TopCandidates(state, int(config.MaxValidatorsCount))
-	if err != nil {
-		return err
-	}
+	//candidates, err := snap.TopCandidates(state, int(config.MaxValidatorsCount))
+
 
 	// Shuffle candidates of next epoch
 	seed := int64(binary.LittleEndian.Uint32(crypto.Keccak512(header.ParentHash.Bytes())))
+	candidates, err := snap.RandCandidates(seed, int(config.MaxValidatorsCount))
+	if err != nil {
+		return err
+	}
 	r := rand.New(rand.NewSource(seed))
 	for i := len(candidates) - 1; i > 0; i-- {
 		j := int(r.Int31n(int32(i + 1)))

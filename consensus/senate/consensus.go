@@ -3,6 +3,7 @@ package senate
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 	"time"
@@ -200,6 +201,7 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 		return err
 	}
 	if root != headerExtra.Root {
+		log.Info(fmt.Sprintf("root \n %s \n headerExtra.Root %s ",Root2String(root),Root2String(headerExtra.Root)))
 		return errors.New("invalid trie root")
 	}
 
@@ -216,6 +218,9 @@ func (senate *Senate) verifyCascadingFields(chain consensus.ChainHeaderReader, h
 	return nil
 }
 
+func Root2String(root Root) string {
+	return fmt.Sprintf("\nCandidateHash=%s \nConfigHash=%s \nDeclareHash=%s \nDelegateHash= %s \nCandidateHash=%s \nEpochHash=%s \nMintCntHash=%s \nProposalHash=%s \nVoteHash=%s",root.CandidateHash.String(),root.ConfigHash.String(),root.DeclareHash.String(),root.DelegateHash.String(),root.CandidateHash.String(),root.EpochHash.String(),root.MintCntHash.String(),root.ProposalHash.String(),root.VoteHash.String())
+}
 // VerifyUncles verifies that the given block's uncles conform to the consensus
 // rules of a given engine.
 func (senate *Senate) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
